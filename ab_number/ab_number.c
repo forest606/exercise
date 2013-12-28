@@ -17,7 +17,7 @@ void clear_bit(unsigned char *a, int index) {
 }
 
 int sum(int a, int b, int mod) {
-  unsigned int i, j, r, d, kA, kB;
+  unsigned int i, j, r, d, kA, kB, t;
   unsigned int min, max;
   unsigned long long sumA = 0, sumB = 0, countA = 0, countB = 0;
   unsigned int len = a * b;
@@ -37,13 +37,15 @@ int sum(int a, int b, int mod) {
   memset(sumedB, 0, max * 2 / sizeof(char));
 
   for(i = 1; i <= min; ++i) {
+    t = i * i;
+    kA = t;
     for(j = i; j <= max; ++j) {
-      kA = i * j;
       if(((sumedA[kA >> 3] >> (7 - (kA & 7))) & 1) == 0) {
         sumA = (sumA + kA);
         sumedA[kA >> 3] |= 1 << (7 - kA & 7);
         ++countA;
       }
+      kA += i;
 
       kB = i ^ j;
       if(((sumedB[kB >> 3] >> (7 - (kB & 7))) & 1) == 0) {
