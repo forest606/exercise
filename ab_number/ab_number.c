@@ -7,12 +7,12 @@ int get_bit(unsigned char *a, int index) {
 }
 
 void set_bit(unsigned char *a, int index) {
-  int mask = sizeof(char) - 1;
+  int mask = sizeof(char) * 8 - 1;
   a[index] |= 1 << (mask - (index & mask));
 }
 
 void clear_bit(unsigned char *a, int index) {
-  int mask = sizeof(char) - 1;
+  int mask = sizeof(char) * 8 - 1;
   a[index] &= ~(1 << (mask - (index & mask)));
 }
 
@@ -23,6 +23,7 @@ int sum(int a, int b, int mod) {
   unsigned int len = a * b;
   unsigned char *sumedA, *sumedB;
   unsigned char bitA, bitB;
+  unsigned char *pA, *pB;
 
   if(a > b) {
     min = b;
@@ -36,7 +37,34 @@ int sum(int a, int b, int mod) {
   sumedB = (unsigned char*)malloc(max * 2 / sizeof(char));
   memset(sumedB, 0, max * 2 / sizeof(char));
 
-  for(i = 1; i <= min; ++i) {
+  countA = max;
+  countB = max;
+  sumA = (max + 1) * max / 2;
+  sumB = sumA;
+  pA = sumedA;
+  pB = sumedB;
+  t = max / 8;
+  for(i = 0; i < t; ++i) {
+    *pA++ = ~0;
+    *pB++ = ~0;
+  }
+
+  for(i=0; i <= max - t * 8; ++i) {
+    sumedA[t] |= 1 << (7 - ((t * 8 + i) & 7));
+    sumedB[t] |= 1 << (7 - ((t * 8 + i) & 7));
+  }
+  sumedA[0] &= ~(1 << (7 - (0 & 7)));
+  sumedB[0] &= ~(1 << (7 - (1 & 7)));
+  if((max % 2) == 1) {
+    sumB = sumB - 1;
+  } else {
+    sumedB[max >> 3] &= ~(1 << (7 - (max & 7)));
+    sumedB[(max + 1) >> 3] |= 1 << (7 - ((max + 1) & 7));
+  }
+  //printf("A[0]: %x\n", sumedA[0]);
+  //printf("B[0]: %x\n", sumedB[0]);
+
+  for(i = 2; i <= min; ++i) {
     t = i * i;
     kA = t;
     for(j = i; j <= max; ++j) {
@@ -55,6 +83,7 @@ int sum(int a, int b, int mod) {
       }
     }
   }
+  //printf("sumA=%d, sumB=%d\n", sumA, sumB);
   sumB *= countA;
   r = b;
   d = 10;
@@ -63,18 +92,19 @@ int sum(int a, int b, int mod) {
     r /= 10;
   }
   sumA = sumA * d * countB;
+  /*printf("sumA=%d, sumB=%d\n", sumA, sumB);
 
   printf("\n[%d - %d]:", len, countA);
-  /*for(i = 1; i <= len; ++i) {
+  for(i = 1; i <= len; ++i) {
     if(get_bit(sumedA, i))
       printf("%d ", i);
-  }*/
+  }
   printf("\n[%d - %d]:", max * 2, countB);
-  /*for(i = 0; i <= max * 2; ++i) {
+  for(i = 0; i <= max * 2; ++i) {
     if(get_bit(sumedB, i))
       printf("%d ", i);
-  }*/
-  printf("\n");
+  }
+  printf("\n");*/
 
   return (sumA + sumB) % mod ;
 }
