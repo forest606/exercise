@@ -1,0 +1,41 @@
+#!/usr/bin/env python
+
+import os
+import subprocess
+import threading
+
+syncPid = 0
+
+def run_command(command = 'pwd', paused = False):
+    proc = subprocess.Popen(command.split())
+    pid = proc.pid
+    if (paused):
+        os.waitpid(proc.pid, 0)
+    return pid
+
+def kill_process(pid):
+    if(pid != 0):
+        os.kill(pid, 9)
+
+def run_repo_sync():
+    global syncPid
+    inteval = 30
+    kill_process(syncPid)
+    syncPid = repo_sync()
+    threading.Timer(inteval, run_repo_sync).start()
+
+def repo_init(git_url='https://android.googlesource.com/platform/manifest', init_options='-b idea133'):
+    command = 'repo init -u ' + git_url + ' ' + init_options
+    run_command(command, True)
+
+def repo_sync():
+    command = 'repo sync'
+    return run_command(command)
+
+topDir = '/home/forest/aosp'
+if(not os.path.exists(topDir)):
+    os.makedirs(topDir)
+os.chdir(topDir)
+if (not os.path.exists('.repo')):
+    repo_init('git://review.sonyericsson.net/platform/manifest', '-b kk-lagan')
+threading.Timer(2, run_repo_sync).start()
