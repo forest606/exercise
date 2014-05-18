@@ -5,37 +5,51 @@ import subprocess
 import threading
 
 syncPid = 0
+prevData = ''
 
-def run_command(command = 'pwd', paused = False):
-    proc = subprocess.Popen(command.split())
-    pid = proc.pid
-    if (paused):
-        os.waitpid(proc.pid, 0)
-    return pid
+def repo_init():
+    topDir = '/home/forest/aosp'
+    if(not os.path.exists(topDir)):
+        os.makedirs(topDir)
+    os.chdir(topDir)
 
-def kill_process(pid):
-    if(pid != 0):
-        os.kill(pid, 9)
+    if (not os.path.exists('.repo')):
+        git_url='https://android.googlesource.com/platform/manifest'
+        init_options='-b idea133'
+        command = 'repo init -u ' + git_url + ' ' + init_options
+        os.system(command)
 
-def run_repo_sync():
+def get_storage():
+    command = 'du -s .repo | cut -f 1'
+    ret = subprocess.check_output(command, shell=True)
+    print(ret)
+    return ret
+
+def check_status(pid):
+    global prevData
+    currentData = get_storage()
+    if(currentData == prevData and pid != 0):
+        try:
+            os.kill(pid, 9)
+        except:
+            pass
+        return True
+    prevData = currentData
+    return False
+
+def run():
     global syncPid
-    inteval = 30
-    kill_process(syncPid)
-    syncPid = repo_sync()
-    threading.Timer(inteval, run_repo_sync).start()
-
-def repo_init(git_url='https://android.googlesource.com/platform/manifest', init_options='-b idea133'):
-    command = 'repo init -u ' + git_url + ' ' + init_options
-    run_command(command, True)
+    inteval = 300
+    if(check_status(syncPid)):
+        syncPid = repo_sync()
+    threading.Timer(inteval, run).start()
 
 def repo_sync():
     command = 'repo sync'
-    return run_command(command)
+    pid = subprocess.Popen(command.split()).pid
+    return pid
 
-topDir = '/home/forest/aosp'
-if(not os.path.exists(topDir)):
-    os.makedirs(topDir)
-os.chdir(topDir)
-if (not os.path.exists('.repo')):
-    repo_init('git://review.sonyericsson.net/platform/manifest', '-b kk-lagan')
-threading.Timer(2, run_repo_sync).start()
+repo_init()
+prevData = get_storage()
+syncPid = repo_sync()
+threading.Timer(300, run).start()
